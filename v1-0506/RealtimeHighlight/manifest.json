@@ -1,0 +1,25 @@
+{
+  "name": "リアルタイムハイライト",
+  "version": "1.00",
+  "manifest_version": 3,
+  "description": "特定のキーワードをハイライト表示するための拡張機能です。",
+  "icons": {
+    "16": "icons/size16.png",
+    "48": "icons/size48.png",
+    "128": "icons/size128.png"
+  },
+  "action": {
+    "default_popup": "popup.html"
+  },
+  "permissions": ["activeTab", "scripting", "storage"],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "css": ["style.css"],
+      "js": ["lib/jquery-3.6.0.min.js", "content-script.js", "highlight.js"]
+    }
+  ]
+}

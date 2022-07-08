@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+  <meta charset="UTF-8" />
+  <script src="lib/jquery-3.6.0.min.js"></script>
+  <title>PopUp</title>
+  <style>
+    .container {
+      width: 380px;
+      font-family: sans-serif;
+    }
+
+    .textarea-wrap {
+      position: relative;
+    }
+
+    /* Switcher */
+    .textarea-wrap .switcher {
+      float: right;
+      margin-top: 2px;
+      margin-right: 3px;
+      display: inline-block;
+      height: 12px;
+      width: 24px;
+      cursor: pointer;
+      background: #fff;
+      box-shadow: 0 0 2px rgba(0, 0, 0, 0.2) inset;
+      border: 2px solid #eee;
+      border-radius: 20px;
+      vertical-align: middle;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .textarea-wrap .switcher i {
+      z-index: 2;
+      display: block;
+      position: absolute;
+      top: 0;
+      height: 10px;
+      width: 10px;
+      border-radius: 20px;
+      border: 1px solid #eee;
+      background: #fff;
+      box-shadow: 0 0 3px rgba(0, 0, 0, 0.3);
+    }
+
+    .textarea-wrap .switcher:before {
+      z-index: 1;
+      display: block;
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      height: 12px;
+      width: 24px;
+      background: #65c0ff;
+      box-shadow: 2px -3px 5px rgba(255, 255, 255, 0.4) inset;
+      border-radius: 20px;
+    }
+
+    .textarea-wrap .switcher:after {
+      z-index: 1;
+      display: block;
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      height: 12px;
+      width: 24px;
+      background: #aaa;
+      box-shadow: 2px -3px 5px rgba(255, 255, 255, 0.4) inset;
+      border-radius: 20px;
+    }
+
+    .textarea-wrap .switcher[data-on="true"] i {
+      left: 12px;
+    }
+
+    .textarea-wrap .switcher[data-on="true"]:before {
+      left: 0;
+    }
+
+    .textarea-wrap .switcher[data-on="true"]:after {
+      left: 24px;
+    }
+
+    .textarea-wrap .switcher[data-on="false"] i {
+      left: 0;
+    }
+
+    .textarea-wrap .switcher[data-on="false"]:before {
+      left: -24px;
+    }
+
+    .textarea-wrap .switcher[data-on="false"]:after {
+      left: 0;
+    }
+
+    .textarea-wrap .switcher i,
+    .textarea-wrap .switcher:before,
+    .textarea-wrap .switcher:after {
+      transition: left 0.2s ease;
+    }
+
+    /* Tip */
+    .textarea-wrap .tip {
+      display: block;
+      overflow: hidden;
+      height: 26px;
+      line-height: 16px;
+      vertical-align: middle;
+      padding-bottom: 8px;
+      cursor: default;
+    }
+
+    .textarea-wrap .tip .main-tip {
+      font-size: 14px;
+      color: #999;
+    }
+
+    .textarea-wrap .tip .sub-tip {
+      font-size: 11px;
+      color: #aaa;
+      padding-top: 1px;
+    }
+
+    .tipwrap {
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .onoff-box {
+      width: 4.5rem;
+      height: 1rem;
+      position: relative;
+    }
+
+    .onoff-box >  input {
+      opacity: 0;
+    }
+
+    .onoff-box >  label {
+      position: absolute;
+      background-color: #e9513a;
+      width: 100%;
+      height: 100%;
+      top: 0;
+      left: 0;
+      border-radius: 3.125rem;
+      -webkit-transition: background-color .2s ease-in-out;
+      transition: background-color .2s ease-in-out;
+    }
+
+    .onoff-box >  label:after {
+      content: "";
+      display: block;
+      width: 0.875rem;
+      height: 0.875rem;
+      border-radius: 3.125rem;
+      cursor: pointer;
+      position: absolute;
+      top: .08rem;
+      z-index: 1;
+      left: .5rem;
+      background-color: #FFFFFD;
+      -webkit-transition: left .2s ease-in-out;
+      transition: left .2s ease-in-out;
+    }
+
+    .onoff-box >  input[type=checkbox]:checked~label {
+      background-color: #4fbe79;
+    }
+
+    .onoff-box >  input[type=checkbox]:checked~label:after {
+      left: 3.125rem;
+    }
+
+    .highlight-words {
+      border: 1px dashed #aaa;
+      border-radius: 2px;
+      box-shadow: 0 0 5px rgba(0, 0, 0, 0.1) inset;
+    }
+
+    .highlight-words textarea {
+      display: block;
+      min-height: 50px;
+      padding: 5px;
+      box-sizing: border-box;
+      outline: 0;
+      border: 0;
+      background: transparent;
+      resize: none;
+    }
+
+    .highlight-words,
+    .highlight-words textarea {
+      line-height: 16px;
+      font-size: 12px;
+      color: #666;
+      width: 98%;
+      height: 120px;
+      max-width: 98%;
+    }
+
+    textarea#highlight-words:focus {
+      border-color: skyblue;
+      background-color: #ffc;
+      outline: none;
+    }
+
+    /* Scroll bar */
+    .highlight-words textarea::-webkit-scrollbar {
+      width: 11px;
+      height: auto;
+    }
+
+    .highlight-words textarea::-webkit-scrollbar-button {}
+
+    .highlight-words textarea::-webkit-scrollbar-button:start:decrement,
+    .highlight-words textarea::-webkit-scrollbar-button:end:increment {
+      width: 0;
+      height: 0;
+    }
+
+    .highlight-words textarea::-webkit-scrollbar-track-piece {
+      background-clip: padding-box;
+      background-color: #fff;
+      border: 0;
+    }
+
+    .highlight-words textarea::-webkit-scrollbar-thumb {
+      border-radius: 7px;
+      background-color: #888;
+      background-clip: padding-box;
+      border: 2px solid transparent;
+      -webkit-transition: all 0.5s ease;
+    }
+
+    .highlight-words textarea::-webkit-scrollbar-thumb:hover {
+      background-color: #777;
+    }
+
+    .highlight-words textarea::-webkit-scrollbar-thumb:vertical {
+      width: 7px;
+      min-height: 24px;
+    }
+
+    .highlight-words textarea::-webkit-scrollbar-thumb:horizontal {
+      height: 7px;
+      min-width: 24px;
+    }
+
+    #submit-bt {
+      background-color: #00a497;
+      border: none;
+      color: #fff;
+      padding: 4px 8px;
+      margin-top: 4px;
+    }
+
+    .sbwrap {
+      text-align: right;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <div class="textarea-wrap">
+      <div class="tip">
+        <div class="tipwrap">
+          <div>
+            <div class="main-tip">以下にキーワードを入力してください</div>
+          </div>
+          <div class="onoff-box">
+            <input type="checkbox" id="rounded" checked="checked" name="onoff"/>
+            <label for="rounded"></label>
+          </div>
+        </div>
+        <!-- <span class="see-below-arrow"><i></i></span> -->
+        <span class="sub-tip">,（半角カンマ）で区切ってください</span>
+      </div>
+      <textarea class="highlight-words" id="highlight-words" placeholder=""></textarea>
+      <div class="sbwrap"><button id="submit-bt">更新</button></div>
+    </div>
+  </div>
+  <script src="popup.js"></script>
+</body>
+
+</html>
