@@ -20,42 +20,53 @@ $(function () {
 //ダウンロード
 $(function () {
   $("#addex1-download").on("click", function () {
-    var now = new Date();
-    let month = now.getMonth()+1;
-    let date = now.getDate();
-    let hour = now.getHours();
-    let min = now.getMinutes();
-    let sec = now.getSeconds();
-    let target_txt = $("#addex1-highlight").val();
-    const blob = new Blob([target_txt], {type: 'text/plain'});
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    document.body.appendChild(a);
-    a.download = 'Highlight-data-'+month+date+'-'+hour+'-'+min+'-'+sec+'.txt';
-    a.href = url;
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
+    chrome.storage.local.get(["__addex1Highlight"], function (value) {
+      var swords = value["__addex1Highlight"];
+      var now = new Date();
+      let month = now.getMonth() + 1;
+      let date = now.getDate();
+      let hour = now.getHours();
+      let min = now.getMinutes();
+      let sec = now.getSeconds();
+      const blob = new Blob([swords], { type: "text/plain" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      document.body.appendChild(a);
+      a.download =
+        "Highlight-data-" +
+        month +
+        date +
+        "-" +
+        hour +
+        "-" +
+        min +
+        "-" +
+        sec +
+        ".txt";
+      a.href = url;
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    });
   });
 });
 //--------------------------
 //削除
 $(function () {
   $("#addex1-remove").on("click", function () {
-    let checkSaveFlg = window.confirm('記録されているデータを削除してもよろしいですか？');
-    if(checkSaveFlg) {
+    let checkSaveFlg = window.confirm(
+      "記録されているデータを削除してもよろしいですか？"
+    );
+    if (checkSaveFlg) {
       console.log("削除しました");
       //textareaを削除
-      $('#addex1-highlight').val("");
+      $("#addex1-highlight").val("");
       //storageからも削除
-      chrome.storage.local.set(
-        { [Addex1StorageKey]: "" },
-        async () => {
-          const queryOptions = { active: true, currentWindow: true };
-          const [tab] = await chrome.tabs.query(queryOptions);
-          chrome.tabs.sendMessage(tab.id, "SET_MODE_OFF");
-        }
-      );
+      chrome.storage.local.set({ [Addex1StorageKey]: "" }, async () => {
+        const queryOptions = { active: true, currentWindow: true };
+        const [tab] = await chrome.tabs.query(queryOptions);
+        chrome.tabs.sendMessage(tab.id, "SET_MODE_OFF");
+      });
     }
   });
 });
@@ -147,17 +158,14 @@ $(window).on("load", function () {
   chrome.storage.local.get(["__addex1Highlight"], function (value) {
     var swords = value["__addex1Highlight"];
     if (swords) {
-      $("#addex1-highlight").val("");
-      $("#addex1-highlight").val(swords);
+      //$("#addex1-highlight").val("");
+      //$("#addex1-highlight").val(swords);
       //ハイライト
-      chrome.storage.local.set(
-        { [Addex1StorageKey]: swords},
-        async () => {
-          const queryOptions = { active: true, currentWindow: true };
-          const [tab] = await chrome.tabs.query(queryOptions);
-          chrome.tabs.sendMessage(tab.id, "Addex1-Highlight");
-        }
-      );
+      chrome.storage.local.set({ [Addex1StorageKey]: swords }, async () => {
+        const queryOptions = { active: true, currentWindow: true };
+        const [tab] = await chrome.tabs.query(queryOptions);
+        chrome.tabs.sendMessage(tab.id, "Addex1-Highlight");
+      });
     }
   });
 });
@@ -168,42 +176,27 @@ const Addex1StorageKey = "__addex1Highlight";
 //--------------------------
 //現在の表示を記録
 //コールバック
-function addex_recordcallback(text){
-  console.log("取得した値=",text);
+function addex_recordcallback(text) {
+  console.log("取得した値=", text);
   //現在の表示にtextを追加
   let textarea = $("#addex1-highlight");
-  //値をテキストエリアにセット
-  if(textarea.val()==""){
-    textarea.val(text);
-    //---------
-    //現在の値をハイライト&記録
-    chrome.storage.local.set(
-      { [Addex1StorageKey]: text },
-      async () => {
-        const queryOptions = { active: true, currentWindow: true };
-        const [tab] = await chrome.tabs.query(queryOptions);
-        if ($('[name="addex1-onoff"]').prop("checked")) {
-          chrome.tabs.sendMessage(tab.id, "Addex1-Highlight");
-        }
-      }
-    );
-  }else{
-    //重複分は設定しない
+  //重複分は設定しない
+  chrome.storage.local.get(["__addex1Highlight"], function (value) {
+    var swords = value["__addex1Highlight"];
     let _result = "";
-    let preval = textarea.val().trim();
     text = text.split("\n");
     text.forEach((_p) => {
-        //_pがあるか確認
-        if(preval.indexOf(_p)==-1){
-          //含まないときは追加
-          _result = _result+_p+"\n";
-        }
+      //_pがあるか確認
+      if (swords.indexOf(_p) == -1) {
+        //含まないときは追加
+        _result = _result + _p + "\n";
+      }
     });
     //---------
     //現在の値をハイライト&記録
     //console.log("result=",_result);
     chrome.storage.local.set(
-      { [Addex1StorageKey]: _result+preval },
+      { [Addex1StorageKey]: _result + swords },
       async () => {
         const queryOptions = { active: true, currentWindow: true };
         const [tab] = await chrome.tabs.query(queryOptions);
@@ -213,13 +206,13 @@ function addex_recordcallback(text){
       }
     );
     //resultがからでないときは追加
-    if(_result){
-      textarea.val(preval+"\n"+_result);
+    if (_result) {
+      textarea.val(_result);
     }
-  }
+  });
 }
 //現在のTabidを取得
-async function getCurrentTab(){
+async function getCurrentTab() {
   let queryOptions = { active: true, currentWindow: true };
   let [tab] = await chrome.tabs.query(queryOptions);
   return tab;
@@ -233,8 +226,8 @@ $("#addex1-record").click(function () {
   //const queryOptions = { active: true, currentWindow: true };
   //const [tab] = chrome.tabs.query(queryOptions);
   getCurrentTab().then((tab) => {
-		chrome.tabs.sendMessage(tab.id, "Addex1-Record",addex_recordcallback);
-	});
+    chrome.tabs.sendMessage(tab.id, "Addex1-Record", addex_recordcallback);
+  });
 });
 //-----------------------
 //テキストエリアに入力でハイライト
@@ -244,14 +237,11 @@ $(function () {
     if ($('[name="addex1-onoff"]').prop("checked")) {
       //console.log("addex1");
       var sw = $("#addex1-highlight").val();
-      chrome.storage.local.set(
-        { [Addex1StorageKey]: sw },
-        async () => {
-          const queryOptions = { active: true, currentWindow: true };
-          const [tab] = await chrome.tabs.query(queryOptions);
-          chrome.tabs.sendMessage(tab.id, "Addex1-Highlight");
-        }
-      );
+      chrome.storage.local.set({ [Addex1StorageKey]: sw }, async () => {
+        const queryOptions = { active: true, currentWindow: true };
+        const [tab] = await chrome.tabs.query(queryOptions);
+        chrome.tabs.sendMessage(tab.id, "Addex1-Highlight");
+      });
     }
   });
 });
@@ -261,23 +251,17 @@ $('[name="addex1-onoff"]').change(function () {
   if ($(this).prop("checked")) {
     //ONになった時
     var sw = $("#addex1-highlight").val();
-    chrome.storage.local.set(
-      { [Addex1StorageKey]: sw},
-      async () => {
-        const queryOptions = { active: true, currentWindow: true };
-        const [tab] = await chrome.tabs.query(queryOptions);
-        chrome.tabs.sendMessage(tab.id, "Addex1-Highlight");
-      }
-    );
+    chrome.storage.local.set({ [Addex1StorageKey]: sw }, async () => {
+      const queryOptions = { active: true, currentWindow: true };
+      const [tab] = await chrome.tabs.query(queryOptions);
+      chrome.tabs.sendMessage(tab.id, "Addex1-Highlight");
+    });
   } else {
     //OFFになった時
-    chrome.storage.local.set(
-      { [Addex1StorageKey]: sw},
-      async () => {
-        const queryOptions = { active: true, currentWindow: true };
-        const [tab] = await chrome.tabs.query(queryOptions);
-        chrome.tabs.sendMessage(tab.id, "SET_MODE_OFF");
-      }
-    );
+    chrome.storage.local.set({ [Addex1StorageKey]: sw }, async () => {
+      const queryOptions = { active: true, currentWindow: true };
+      const [tab] = await chrome.tabs.query(queryOptions);
+      chrome.tabs.sendMessage(tab.id, "SET_MODE_OFF");
+    });
   }
 });
